@@ -5,6 +5,7 @@ import cors from "cors";
 import authRouter from "./routes/User";
 import session from "express-session";
 import Redis from "ioredis";
+import postRouter from "./routes/BlogPost";
 // import connectRedis from "connect-redis";
 
 declare module "express-session" {
@@ -63,6 +64,7 @@ async function main() {
 	});
 
 	app.use("/auth", authRouter);
+	app.use("/api", postRouter);
 
 	app.listen(process.env.PORT || 4000, () =>
 		console.log(`listening on http://localhost:${process.env.PORT || 4000}`)
