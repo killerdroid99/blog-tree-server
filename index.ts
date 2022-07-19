@@ -49,7 +49,6 @@ app.use(express.json());
 
 async function main() {
 	app.get("/", async (req, res) => {
-		console.log(req.session);
 		if (!req.session.userId) {
 			res.json({ msg: "not logged in" });
 			return null;
