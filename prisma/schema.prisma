@@ -16,14 +16,15 @@ model Post {
   updatedAt DateTime @updatedAt
   title     String   @db.VarChar(255)
   content   String?
+  votes     Int      @default(0)
   author    User     @relation(fields: [authorId], references: [id])
   authorId  String
 }
 
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  name     String?
+  id       String @id @default(uuid())
+  email    String @unique
+  name     String
   password String
   posts    Post[]
 }
