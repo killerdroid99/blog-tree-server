@@ -1,17 +1,23 @@
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
+import { User } from "../types/UserTypes";
 import { prisma } from "../index";
 
 export const createNewUser = async (req: Request, res: Response) => {
 	try {
 		const hashedPassword: string = await bcrypt.hash(req.body.password, 10);
-		const newuser: object = await prisma.user.create({
+		const newuser: User = await prisma.user.create({
 			data: {
 				name: req.body.name,
 				password: hashedPassword,
 				email: req.body.email,
 			},
 		});
+		// store user id session
+		// this will set a cookie on the user
+		// keep them logged in
+		req.session.userId = newuser.id;
+
 		res.json({
 			msg: `user:${req.body.name} added successfully`,
 		});
@@ -33,6 +39,8 @@ export const authenticateUser = async (req: Request, res: Response) => {
 				user.password
 			);
 			if (passwordMatched) {
+				req.session.userId = user.id;
+				// console.log(req.session);
 				res.json({
 					msg: `user:${user.name} authenticated`,
 				});
@@ -50,3 +58,5 @@ export const authenticateUser = async (req: Request, res: Response) => {
 		res.status(400).json({ msg: "there was some error", error });
 	}
 };
+
+export const logOutUser = () => {};

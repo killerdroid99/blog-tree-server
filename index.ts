@@ -2,113 +2,67 @@ import { PrismaClient } from "@prisma/client";
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import bcrypt from "bcryptjs";
+import authRouter from "./routes/User";
+import session from "express-session";
+import Redis from "ioredis";
+// import connectRedis from "connect-redis";
 
-const prisma = new PrismaClient();
+declare module "express-session" {
+	export interface SessionData {
+		userId: string;
+	}
+}
+
+const RedisStore = require("connect-redis")(session);
 const app = express();
-app.use(cors());
+let redisClient = new Redis();
+export const prisma = new PrismaClient();
+
+app.use(
+	session({
+		name: "qid",
+		store: new RedisStore({
+			client: redisClient,
+			disableTouch: true,
+		}),
+		cookie: {
+			maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // setting max age for cookie = 10 years
+			httpOnly: true,
+			sameSite: "lax",
+			secure: false,
+		},
+		saveUninitialized: false,
+		secret: process.env.SECRET as string,
+		resave: false,
+	})
+);
+
+const corsOptions = {
+	origin: "http://localhost:3001", //Your Client, do not write '*'
+	credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 async function main() {
-	app.get("/", (req, res) => {
-		res.json({ msg: "hello world" });
+	app.get("/", async (req, res) => {
+		console.log(req.session);
+		if (!req.session.userId) {
+			res.json({ msg: "not logged in" });
+			return null;
+		}
+		const user = await prisma.user.findFirst({
+			where: {
+				id: req.session.userId,
+			},
+		});
+
+		res.json(user?.name);
 	});
 
-	// get all users
-	app.get("/users", async (req, res) => {
-		try {
-			const users: object[] = await prisma.user.findMany();
-			res.json({
-				msg: "got all users",
-				data: users,
-			});
-		} catch (error) {
-			res.status(400).json({ msg: "there was some error", error });
-		}
-	});
-
-	// create a new user
-	app.post("/auth/signup", async (req, res) => {
-		try {
-			const hashedPassword: string = await bcrypt.hash(req.body.password, 10);
-			const newuser: object = await prisma.user.create({
-				data: {
-					name: req.body.name,
-					password: hashedPassword,
-					email: req.body.email,
-				},
-			});
-			res.json({
-				msg: `user:${req.body.name} added successfully`,
-			});
-		} catch (error) {
-			res.status(400).json({ msg: "there was some error", error });
-		}
-	});
-
-	// authenticate the user
-	app.post("/auth/login", async (req, res) => {
-		try {
-			const user = await prisma.user.findFirst({
-				where: {
-					email: req.body.email,
-				},
-			});
-			if (user) {
-				const passwordMatched: boolean = await bcrypt.compare(
-					req.body.password,
-					user.password
-				);
-				if (passwordMatched) {
-					res.json({
-						msg: `user:${user.name} authenticated`,
-					});
-				} else {
-					res.status(403).json({
-						msg: `you entered invalid credentials`,
-					});
-				}
-			} else {
-				res.status(404).json({
-					msg: `no user found with email: ${req.body.email}`,
-				});
-			}
-		} catch (error) {
-			res.status(400).json({ msg: "there was some error", error });
-		}
-	});
-
-	// update an existing user
-	app.patch("/auth/update/:id", async (req, res) => {
-		try {
-			const updateduser: object = await prisma.user.update({
-				where: { id: req.params.id },
-				data: { ...req.body },
-			});
-			res.json({
-				msg: "user updated successfully",
-				data: updateduser,
-			});
-		} catch (error) {
-			res.status(400).json({ msg: "there was some error", error });
-		}
-	});
-
-	// deletes a user
-	app.delete("/auth/delete/:id", async (req, res) => {
-		try {
-			const deleteduser: object = await prisma.user.delete({
-				where: { id: req.params.id },
-			});
-			res.json({
-				msg: "user deleted successfully",
-				data: deleteduser,
-			});
-		} catch (error) {
-			res.status(400).json({ msg: "there was some error", error });
-		}
-	});
+	app.use("/auth", authRouter);
 
 	app.listen(process.env.PORT || 4000, () =>
 		console.log(`listening on http://localhost:${process.env.PORT || 4000}`)
