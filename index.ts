@@ -1,12 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import "dotenv/config";
 import express from "express";
-import bodyParser from "body-parser";
+import cors from "cors";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(cors());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
 async function main() {
 	app.get("/", (req, res) => {
@@ -27,22 +29,58 @@ async function main() {
 	});
 
 	// create a new user
-	app.post("/users", async (req, res) => {
+	app.post("/auth/signup", async (req, res) => {
 		try {
+			const hashedPassword: string = await bcrypt.hash(req.body.password, 10);
 			const newuser: object = await prisma.user.create({
-				data: { ...req.body },
+				data: {
+					name: req.body.name,
+					password: hashedPassword,
+					email: req.body.email,
+				},
 			});
 			res.json({
-				msg: "user added successfully",
-				data: newuser,
+				msg: `user:${req.body.name} added successfully`,
 			});
 		} catch (error) {
 			res.status(400).json({ msg: "there was some error", error });
 		}
 	});
 
+	// authenticate the user
+	app.post("/auth/login", async (req, res) => {
+		try {
+			const user = await prisma.user.findFirst({
+				where: {
+					email: req.body.email,
+				},
+			});
+			if (user) {
+				const passwordMatched: boolean = await bcrypt.compare(
+					req.body.password,
+					user.password
+				);
+				if (passwordMatched) {
+					res.json({
+						msg: `user:${user.name} authenticated`,
+					});
+				} else {
+					res.status(403).json({
+						msg: `you entered invalid credentials`,
+					});
+				}
+			} else {
+				res.status(404).json({
+					msg: `no user found with email: ${req.body.email}`,
+				});
+			}
+		} catch (error) {
+			res.status(400).json({ msg: "there was some error", error });
+		}
+	});
+
 	// update an existing user
-	app.patch("/users/:id", async (req, res) => {
+	app.patch("/auth/update/:id", async (req, res) => {
 		try {
 			const updateduser: object = await prisma.user.update({
 				where: { id: req.params.id },
@@ -58,7 +96,7 @@ async function main() {
 	});
 
 	// deletes a user
-	app.delete("/users/:id", async (req, res) => {
+	app.delete("/auth/delete/:id", async (req, res) => {
 		try {
 			const deleteduser: object = await prisma.user.delete({
 				where: { id: req.params.id },
