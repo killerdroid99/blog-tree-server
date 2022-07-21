@@ -3,7 +3,11 @@ import { prisma } from "../index";
 
 export const getAllPosts = async (req: Request, res: Response) => {
 	try {
-		const posts = await prisma.post.findMany();
+		const posts = await prisma.post.findMany({
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
 
 		res.json(posts);
 	} catch (error) {
