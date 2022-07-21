@@ -61,13 +61,11 @@ export const authenticateUser = async (req: Request, res: Response) => {
 
 export const logOutUser = async (req: Request, res: Response) => {
 	try {
-		const session = await req.session.destroy((err) => {
-			err && console.log(err);
-			err && res.json({ msg: err });
+		req.session.destroy((err) => {
+			console.log(err);
 		});
-		const clearqid = await res.clearCookie("qid");
-
-		res.json({ msg: "Log Out successfully!" });
+		res.clearCookie("qid");
+		res.sendStatus(204);
 	} catch (error) {
 		res.status(400).json({ msg: "there was some error", error });
 	}

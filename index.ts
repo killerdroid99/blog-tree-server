@@ -31,6 +31,7 @@ app.use(
 			httpOnly: true,
 			sameSite: "lax",
 			secure: false,
+			path: "/",
 		},
 		saveUninitialized: false,
 		secret: process.env.SECRET as string,
@@ -39,7 +40,7 @@ app.use(
 );
 
 const corsOptions = {
-	origin: "http://localhost:3001", //Your Client, do not write '*'
+	origin: "http://localhost:3000", //Your Client, do not write '*'
 	credentials: true,
 };
 
