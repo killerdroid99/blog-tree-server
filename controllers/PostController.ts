@@ -73,3 +73,17 @@ export const deletePost = async (req: Request, res: Response) => {
 		res.status(403).json({ msg: "User not authenticated" });
 	}
 };
+
+export const getPostById = async (req: Request, res: Response) => {
+	try {
+		const post = await prisma.post.findUnique({
+			where: {
+				id: req.params.id,
+			},
+		});
+
+		res.json(post);
+	} catch (error) {
+		res.status(400).json({ msg: "Request cannot be processed" });
+	}
+};

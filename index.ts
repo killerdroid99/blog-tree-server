@@ -6,6 +6,7 @@ import authRouter from "./routes/User";
 import session from "express-session";
 import Redis from "ioredis";
 import postRouter from "./routes/BlogPost";
+import { getUser } from "./controllers/UserController";
 // import connectRedis from "connect-redis";
 
 declare module "express-session" {
@@ -62,6 +63,8 @@ async function main() {
 
 		res.json(user?.name);
 	});
+
+	app.get("/:id", getUser);
 
 	app.use("/auth", authRouter);
 	app.use("/api", postRouter);

@@ -3,6 +3,7 @@ import {
 	createNewPost,
 	deletePost,
 	getAllPosts,
+	getPostById,
 	updatePost,
 } from "../controllers/PostController";
 
@@ -19,5 +20,8 @@ postRouter.post("/posts/:id", updatePost);
 
 // delete a post
 postRouter.post("/posts/:id", deletePost);
+
+// get post by id
+postRouter.get("/posts/:id", getPostById);
 
 export default postRouter;

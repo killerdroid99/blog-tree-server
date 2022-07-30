@@ -70,3 +70,21 @@ export const logOutUser = async (req: Request, res: Response) => {
 		res.status(400).json({ msg: "there was some error", error });
 	}
 };
+
+export const getUser = async (req: Request, res: Response) => {
+	try {
+		const userData = await prisma.user.findUnique({
+			where: {
+				id: req.params.id,
+			},
+			select: {
+				name: true,
+				email: true,
+			},
+		});
+
+		res.json(userData);
+	} catch (error) {
+		res.status(400).json({ msg: "there was some error", error });
+	}
+};
