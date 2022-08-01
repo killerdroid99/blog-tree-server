@@ -16,10 +16,10 @@ postRouter.get("/posts", getAllPosts);
 postRouter.post("/posts", createNewPost);
 
 // update a post
-postRouter.post("/posts/:id", updatePost);
+postRouter.patch("/posts/:id", updatePost);
 
 // delete a post
-postRouter.post("/posts/:id", deletePost);
+postRouter.delete("/posts/:id", deletePost);
 
 // get post by id
 postRouter.get("/posts/:id", getPostById);

@@ -18,6 +18,7 @@ model Post {
   content   String
   votes     Int      @default(0)
   author    User     @relation(fields: [authorId], references: [id])
+  updated   Boolean  @default(false)
   authorId  String
 }
 

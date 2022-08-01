@@ -41,7 +41,7 @@ app.use(
 );
 
 const corsOptions = {
-	origin: "http://localhost:3000", //Your Client, do not write '*'
+	origin: process.env.CLIENT_URL, //Your Client, do not write '*'
 	credentials: true,
 };
 

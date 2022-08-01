@@ -37,17 +37,27 @@ export const createNewPost = async (req: Request, res: Response) => {
 export const updatePost = async (req: Request, res: Response) => {
 	if (req.session.userId) {
 		try {
-			const post = await prisma.post.update({
+			const findPost = await prisma.post.findFirst({
 				where: {
 					id: req.params.id,
 				},
-				data: {
-					...req.body,
-					authorId: req.session.userId,
-				},
 			});
 
-			res.json({ msg: "post updated successfully", post });
+			if (findPost?.authorId === req.session.userId) {
+				const post = await prisma.post.update({
+					where: {
+						id: req.params.id,
+					},
+					data: {
+						...req.body,
+						updated: true,
+					},
+				});
+
+				res.json({ msg: "post updated successfully", post });
+			} else {
+				res.status(403).json({ msg: "This is not your post!" });
+			}
 		} catch (error) {
 			res.status(400).json({ msg: "Request cannot be processed" });
 		}
