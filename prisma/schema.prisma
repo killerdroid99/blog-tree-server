@@ -16,16 +16,30 @@ model Post {
   updatedAt DateTime @updatedAt
   title     String   @db.VarChar(255)
   content   String
-  votes     Int      @default(0)
+  // votes     Int      @default(0)
   author    User     @relation(fields: [authorId], references: [id])
   updated   Boolean  @default(false)
+  // voted     Boolean  @default(false)
   authorId  String
+  votes     Votes[]
 }
 
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
+  id       String  @id @default(uuid())
+  email    String  @unique
   name     String
   password String
   posts    Post[]
+  votes    Votes[]
+}
+
+model Votes {
+  voteCount Int     @default(0)
+  voted     Boolean @default(false)
+  postId    String
+  voterId   String
+  post      Post    @relation(fields: [postId], references: [id])
+  voter     User    @relation(fields: [voterId], references: [id])
+
+  @@id([postId, voterId])
 }
