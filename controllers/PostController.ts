@@ -25,6 +25,13 @@ export const createNewPost = async (req: Request, res: Response) => {
 				},
 			});
 
+			// const votePost = await prisma.votes.create({
+			// 	data: {
+			// 		postId: req.params.id,
+			// 		voterId: req.session.id,
+			// 	},
+			// });
+
 			res.json({ msg: "post added successfully", newPost });
 		} catch (error) {
 			res.status(400).json({ msg: "Request cannot be processed" });
@@ -95,5 +102,93 @@ export const getPostById = async (req: Request, res: Response) => {
 		res.json(post);
 	} catch (error) {
 		res.status(400).json({ msg: "Request cannot be processed" });
+	}
+};
+
+export const votePost = async (req: Request, res: Response) => {
+	if (req.session.userId) {
+		try {
+			const votePost = await prisma.votes.findUnique({
+				where: {
+					postId_voterId: {
+						postId: req.params.id,
+						voterId: req.session.userId,
+					},
+				},
+			});
+
+			if (votePost) {
+				if (!votePost.voted) {
+					await prisma.votes.update({
+						where: {
+							postId_voterId: {
+								postId: req.params.id,
+								voterId: req.session.userId,
+							},
+						},
+						data: {
+							voteCount: {
+								increment: 1,
+							},
+							voted: {
+								set: true,
+							},
+						},
+					});
+					res.json({ msg: "voted" });
+				} else if (votePost.voted) {
+					await prisma.votes.update({
+						where: {
+							postId_voterId: {
+								postId: req.params.id,
+								voterId: req.session.userId,
+							},
+						},
+						data: {
+							voteCount: {
+								decrement: 1,
+							},
+							voted: {
+								set: false,
+							},
+						},
+					});
+					res.json({ msg: "unvoted" });
+				}
+			} else {
+				await prisma.votes.create({
+					data: {
+						postId: req.params.id,
+						voterId: req.session.userId,
+						voteCount: 1,
+						voted: true,
+					},
+				});
+				res.json({ msg: "created and voted" });
+			}
+		} catch (error) {
+			res.status(400).json({ msg: "Request cannot be processed" });
+		}
+	} else {
+		res.status(403).json({ msg: "User not authenticated" });
+	}
+};
+
+export const getVotes = async (req: Request, res: Response) => {
+	if (req.session.userId) {
+		try {
+			const allVotes = await prisma.votes.count({
+				where: {
+					postId: req.params.id,
+					voted: true,
+				},
+			});
+
+			res.json({ totalVotes: allVotes });
+		} catch (error) {
+			res.status(400).json({ msg: "Request cannot be processed" });
+		}
+	} else {
+		res.status(403).json({ msg: "User not authenticated" });
 	}
 };

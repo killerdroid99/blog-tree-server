@@ -4,7 +4,9 @@ import {
 	deletePost,
 	getAllPosts,
 	getPostById,
+	getVotes,
 	updatePost,
+	votePost,
 } from "../controllers/PostController";
 
 export const postRouter = express.Router();
@@ -23,5 +25,11 @@ postRouter.delete("/posts/:id", deletePost);
 
 // get post by id
 postRouter.get("/posts/:id", getPostById);
+
+// vote post
+postRouter.put("/posts/votes/:id", votePost);
+
+// get votes
+postRouter.get("/posts/votes/:id", getVotes);
 
 export default postRouter;
