@@ -7,6 +7,14 @@ export const getAllPosts = async (req: Request, res: Response) => {
 			orderBy: {
 				createdAt: "desc",
 			},
+			include: {
+				author: {
+					select: {
+						name: true,
+					},
+				},
+			},
+			take: 15,
 		});
 
 		res.json(posts);
@@ -24,13 +32,6 @@ export const createNewPost = async (req: Request, res: Response) => {
 					authorId: req.session.userId,
 				},
 			});
-
-			// const votePost = await prisma.votes.create({
-			// 	data: {
-			// 		postId: req.params.id,
-			// 		voterId: req.session.id,
-			// 	},
-			// });
 
 			res.json({ msg: "post added successfully", newPost });
 		} catch (error) {
@@ -96,6 +97,13 @@ export const getPostById = async (req: Request, res: Response) => {
 		const post = await prisma.post.findUnique({
 			where: {
 				id: req.params.id,
+			},
+			include: {
+				author: {
+					select: {
+						name: true,
+					},
+				},
 			},
 		});
 
@@ -175,20 +183,35 @@ export const votePost = async (req: Request, res: Response) => {
 };
 
 export const getVotes = async (req: Request, res: Response) => {
-	if (req.session.userId) {
-		try {
-			const allVotes = await prisma.votes.count({
-				where: {
-					postId: req.params.id,
-					voted: true,
-				},
-			});
+	try {
+		const allVotes = await prisma.votes.count({
+			where: {
+				postId: req.params.id,
+				voted: true,
+			},
+		});
 
-			res.json({ totalVotes: allVotes });
-		} catch (error) {
-			res.status(400).json({ msg: "Request cannot be processed" });
-		}
-	} else {
-		res.status(403).json({ msg: "User not authenticated" });
+		res.json({ totalVotes: allVotes });
+	} catch (error) {
+		res.status(400).json({ msg: "Request cannot be processed" });
+	}
+};
+
+export const getVoteStatus = async (req: Request, res: Response) => {
+	try {
+		const voteStatus = await prisma.votes.findUnique({
+			where: {
+				postId_voterId: {
+					postId: req.params.id,
+					// @ts-ignore
+					voterId: req.session.userId,
+				},
+			},
+		});
+		console.log(req.session.userId, voteStatus);
+
+		res.json(voteStatus);
+	} catch (error) {
+		res.status(400).json({ msg: "Request cannot be processed" });
 	}
 };

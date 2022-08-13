@@ -6,7 +6,8 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"dev": "nodemon index.ts",
-		"migrate": "pnpx prisma migrate dev --name init"
+		"migrate": "pnpx prisma migrate dev --name init",
+		"studio": "pnpx prisma studio"
 	},
 	"keywords": [],
 	"author": "",

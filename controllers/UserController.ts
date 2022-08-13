@@ -62,7 +62,7 @@ export const authenticateUser = async (req: Request, res: Response) => {
 export const logOutUser = async (req: Request, res: Response) => {
 	try {
 		req.session.destroy((err) => {
-			console.log(err);
+			// console.log(err);
 		});
 		res.clearCookie("qid");
 		res.sendStatus(204);

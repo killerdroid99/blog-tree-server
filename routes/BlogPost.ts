@@ -5,6 +5,7 @@ import {
 	getAllPosts,
 	getPostById,
 	getVotes,
+	getVoteStatus,
 	updatePost,
 	votePost,
 } from "../controllers/PostController";
@@ -31,5 +32,8 @@ postRouter.put("/posts/votes/:id", votePost);
 
 // get votes
 postRouter.get("/posts/votes/:id", getVotes);
+
+// get vote status
+postRouter.get("/posts/vote/:id", getVoteStatus);
 
 export default postRouter;

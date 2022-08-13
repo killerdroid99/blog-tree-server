@@ -61,7 +61,7 @@ async function main() {
 			},
 		});
 
-		res.json(user?.name);
+		res.json({ name: user?.name, id: user?.id });
 	});
 
 	app.get("/:id", getUser);
