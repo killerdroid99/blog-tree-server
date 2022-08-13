@@ -77,6 +77,12 @@ export const updatePost = async (req: Request, res: Response) => {
 export const deletePost = async (req: Request, res: Response) => {
 	if (req.session.userId) {
 		try {
+			const postVotes = await prisma.votes.deleteMany({
+				where: {
+					postId: req.params.id,
+				},
+			});
+
 			const post = await prisma.post.delete({
 				where: {
 					id: req.params.id,
@@ -85,6 +91,7 @@ export const deletePost = async (req: Request, res: Response) => {
 
 			res.json({ msg: "post deleted successfully", post });
 		} catch (error) {
+			console.log(error);
 			res.status(400).json({ msg: "Request cannot be processed" });
 		}
 	} else {
@@ -208,7 +215,7 @@ export const getVoteStatus = async (req: Request, res: Response) => {
 				},
 			},
 		});
-		console.log(req.session.userId, voteStatus);
+		// console.log(req.session.userId, voteStatus);
 
 		res.json(voteStatus);
 	} catch (error) {
