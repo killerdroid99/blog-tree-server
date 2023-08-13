@@ -3,22 +3,58 @@ import { prisma } from "../index";
 
 export const getAllPosts = async (req: Request, res: Response) => {
 	try {
-		const posts = await prisma.post.findMany({
+		// const Limit = parseInt(req.query.limit as string);
+		// const Cursor = req.query.limit as string;
+		// console.log(Cursor);
+
+		// let posts = await prisma.post.findMany({
+		// 	orderBy: {
+		// 		createdAt: "desc",
+		// 	},
+		// 	select: {
+		// 		id: true,
+		// 		title: true,
+		// 		createdAt: true,
+		// 		updated: true,
+		// 		author: {
+		// 			select: {
+		// 				name: true,
+		// 			},
+		// 		},
+		// 	},
+		// 	take: req.query.limit ? Math.min(Limit, 15) : 15,
+		// 	skip: req.query.cursor ? 1 : 0,
+		// 	cursor: {
+		// 		id: req.query.limit as string,
+		// 	},
+		// });
+
+		// const nextId =
+		// 	posts.length === Limit ? posts[Limit - 1].id : posts[posts.length - 1].id;
+
+		// res.json({ posts, nextId });
+
+		const allPosts = await prisma.post.findMany({
 			orderBy: {
 				createdAt: "desc",
 			},
-			include: {
+			select: {
+				id: true,
+				title: true,
+				createdAt: true,
+				updated: true,
 				author: {
 					select: {
 						name: true,
 					},
 				},
 			},
-			take: 15,
+			// take: 2,
 		});
 
-		res.json(posts);
+		res.json(allPosts);
 	} catch (error) {
+		console.log(error);
 		res.status(400).json({ msg: "Request cannot be processed" });
 	}
 };
@@ -168,7 +204,7 @@ export const votePost = async (req: Request, res: Response) => {
 							},
 						},
 					});
-					res.json({ msg: "unvoted" });
+					res.json({ msg: "vote removed" });
 				}
 			} else {
 				await prisma.votes.create({
@@ -210,15 +246,97 @@ export const getVoteStatus = async (req: Request, res: Response) => {
 			where: {
 				postId_voterId: {
 					postId: req.params.id,
-					// @ts-ignore
-					voterId: req.session.userId,
+					voterId: req.session.userId!,
 				},
 			},
 		});
-		// console.log(req.session.userId, voteStatus);
 
 		res.json(voteStatus);
 	} catch (error) {
 		res.status(400).json({ msg: "Request cannot be processed" });
+	}
+};
+
+export const getComments = async (req: Request, res: Response) => {
+	try {
+		const allComments = await prisma.comment.findMany({
+			where: {
+				postId: req.params.id,
+			},
+			include: {
+				commenter: {
+					select: {
+						name: true,
+					},
+				},
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+		});
+
+		res.json(allComments);
+	} catch (error) {
+		res.status(400).json({ msg: "Request cannot be processed" });
+	}
+};
+
+export const createComment = async (req: Request, res: Response) => {
+	if (req.session.userId) {
+		try {
+			const newComment = await prisma.comment.create({
+				data: {
+					text: req.body.text,
+					commenterId: req.session.userId!,
+					postId: req.params.id,
+				},
+			});
+
+			res.json({ msg: "comment added successfully", newComment });
+		} catch (error) {
+			console.log(error);
+			res.status(400).json({ msg: "Request cannot be processed" });
+		}
+	} else {
+		res.status(403).json({ msg: "User not authenticated" });
+	}
+};
+
+export const deleteComment = async (req: Request, res: Response) => {
+	if (req.session.userId) {
+		try {
+			const comment = await prisma.comment.delete({
+				where: {
+					id: req.params.id,
+				},
+			});
+
+			res.json({ msg: "comment deleted successfully", comment });
+		} catch (error) {
+			res.status(400).json({ msg: "Request cannot be processed" });
+		}
+	} else {
+		res.status(403).json({ msg: "User not authenticated" });
+	}
+};
+
+export const editComment = async (req: Request, res: Response) => {
+	if (req.session.userId) {
+		try {
+			const comment = await prisma.comment.update({
+				where: {
+					id: req.params.id,
+				},
+				data: {
+					text: req.body.text,
+				},
+			});
+
+			res.json({ msg: "comment edited successfully", comment });
+		} catch (error) {
+			res.status(400).json({ msg: "Request cannot be processed" });
+		}
+	} else {
+		res.status(403).json({ msg: "User not authenticated" });
 	}
 };

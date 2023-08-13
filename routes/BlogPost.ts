@@ -1,8 +1,12 @@
 import express from "express";
 import {
+	createComment,
 	createNewPost,
+	deleteComment,
 	deletePost,
+	editComment,
 	getAllPosts,
+	getComments,
 	getPostById,
 	getVotes,
 	getVoteStatus,
@@ -13,7 +17,7 @@ import {
 export const postRouter = express.Router();
 
 // get all posts
-postRouter.get("/posts", getAllPosts);
+postRouter.get("/posts/", getAllPosts);
 
 // create a new post
 postRouter.post("/posts", createNewPost);
@@ -25,15 +29,27 @@ postRouter.patch("/post/:id", updatePost);
 postRouter.delete("/post/:id", deletePost);
 
 // get post by id
-postRouter.get("/posts/:id", getPostById);
+postRouter.get("/post/:id", getPostById);
 
 // vote post
-postRouter.put("/posts/votes/:id", votePost);
+postRouter.put("/post/vote/:id", votePost);
 
 // get votes
-postRouter.get("/posts/votes/:id", getVotes);
+postRouter.get("/post/votes/:id", getVotes);
 
 // get vote status
-postRouter.get("/posts/vote/:id", getVoteStatus);
+postRouter.get("/post/vote/:id", getVoteStatus);
+
+// get all comments on post
+postRouter.get("/post/comments/:id", getComments);
+
+// comment on post
+postRouter.post("/post/comment/:id", createComment);
+
+// update comment
+postRouter.patch("/post/comment/:id", editComment);
+
+// delete comment
+postRouter.delete("/post/comment/:id", deleteComment);
 
 export default postRouter;

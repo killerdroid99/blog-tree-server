@@ -3,6 +3,7 @@ import {
 	createNewUser,
 	authenticateUser,
 	logOutUser,
+	currentUser,
 } from "../controllers/UserController";
 
 const authRouter = express.Router();
@@ -15,5 +16,8 @@ authRouter.post("/login", authenticateUser);
 
 // logout user
 authRouter.post("/logout", logOutUser);
+
+// get current user
+authRouter.get("/current", currentUser);
 
 export default authRouter;
