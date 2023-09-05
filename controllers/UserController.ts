@@ -1,7 +1,9 @@
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import { User } from "../types/UserTypes";
-import { prisma } from "../index";
+import { prisma, redis } from "../index";
+import { sendEmail } from "../utils/sendEmail";
+import { v4 } from "uuid";
 
 interface ICreateNewUser extends Request {
 	body: {
@@ -158,11 +160,52 @@ export const currentUser = async (req: Request, res: Response) => {
 			id: true,
 			name: true,
 			email: true,
+			profileImage: true,
 		},
 	});
 
 	res.json(userData);
 	return;
+};
+
+// TODO: configure forgot password
+export const forgotPassword = async (req: Request, res: Response) => {
+	try {
+		if (!req.body?.email) {
+			return res.json({
+				success: false,
+				msg: `Email cannot be blank`,
+				fields: ["email"],
+			});
+		}
+
+		const user = await prisma.user.findUnique({
+			where: {
+				email: req.body?.email,
+			},
+		});
+
+		if (!user) {
+			return res.json({
+				success: false,
+				msg: `User with email ${req.body?.email} doesn't exist`,
+				fields: ["email"],
+			});
+		}
+
+		const token = v4();
+
+		await redis.set(`forgot-password-${token}`, user.id, "EX", 1000 * 60 * 5); // 5 minutes
+
+		sendEmail(
+			user.email,
+			`<h1>Hello ${user.name}</h1>
+		<p>Visit <a href='${process.env.CLIENT_URL}/reset-password/${token}'>this link</a> to reset your password</p>
+		`
+		);
+
+		return res.json({ success: true, msg: "Verification email sent" });
+	} catch (error) {}
 };
 
 export const getUser = async (req: Request, res: Response) => {
@@ -174,11 +217,239 @@ export const getUser = async (req: Request, res: Response) => {
 			select: {
 				name: true,
 				email: true,
+				profileImage: true,
 			},
 		});
 
 		res.json(userData);
 	} catch (error) {
 		res.status(400).json({ msg: "there was some error", error });
+	}
+};
+
+interface IProfileName extends Request {
+	body: {
+		name: string;
+	};
+}
+
+export const userProfileName = async (req: IProfileName, res: Response) => {
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				id: req.session.userId,
+			},
+		});
+
+		if (!user) {
+			return res.json({
+				success: false,
+				msg: `User not authenticated`,
+			});
+		}
+
+		if (!req.body.name) {
+			return res.json({
+				success: false,
+				msg: `Name cannot be empty`,
+				fields: ["name"],
+			});
+		}
+
+		if (req.body.name === user.name) {
+			return res.json({
+				success: false,
+				msg: `Name is not changed`,
+				fields: ["name"],
+			});
+		}
+		await prisma.user.update({
+			where: {
+				id: req.session.userId,
+			},
+			data: {
+				name: req.body.name,
+			},
+		});
+		return res.json({ success: true, msg: "Name updated" });
+	} catch (error) {
+		res
+			.status(400)
+			.json({ success: false, msg: `There was some error: ${error}` });
+	}
+};
+
+interface IProfileEmail extends Request {
+	body: {
+		email: string;
+		confirmPassword: string;
+	};
+}
+
+export const userProfileEmail = async (req: IProfileEmail, res: Response) => {
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				id: req.session.userId,
+			},
+		});
+
+		if (!user) {
+			return res.json({
+				success: false,
+				msg: `User not authenticated`,
+			});
+		}
+
+		if (!req.body.email) {
+			return res.json({
+				success: false,
+				msg: `Email cannot be empty`,
+				fields: ["email"],
+			});
+		}
+
+		const passwordMatched: boolean = await bcrypt.compare(
+			req.body.confirmPassword,
+			user.password
+		);
+
+		if (!passwordMatched) {
+			return res.json({
+				success: false,
+				msg: "Password entered is incorrect",
+				fields: ["confirmPassword"],
+			});
+		}
+
+		await prisma.user.update({
+			where: {
+				id: req.session.userId,
+			},
+			data: {
+				email: req.body.email,
+			},
+		});
+		return res.json({ success: true, msg: "Email updated" });
+	} catch (error) {
+		res
+			.status(400)
+			.json({ success: false, msg: `there was some error: ${error}` });
+	}
+};
+
+interface IProfilePassword extends Request {
+	body: {
+		prevPassword: string;
+		newPassword: string;
+		confirmNewPassword: string;
+	};
+}
+
+export const userPasswordChange = async (
+	req: IProfilePassword,
+	res: Response
+) => {
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				id: req.session.userId,
+			},
+		});
+
+		if (!user) {
+			return res.json({
+				success: false,
+				msg: `User not authenticated`,
+			});
+		}
+
+		if (
+			req.body.prevPassword &&
+			req.body.newPassword &&
+			req.body.confirmNewPassword
+		) {
+			const passwordMatched: boolean = await bcrypt.compare(
+				req.body.prevPassword,
+				user.password
+			);
+
+			if (!passwordMatched) {
+				return res.json({
+					success: false,
+					msg: "Current password entered is incorrect",
+					fields: ["prevPassword"],
+				});
+			}
+
+			if (req.body.newPassword !== req.body.confirmNewPassword) {
+				return res.json({
+					success: false,
+					msg: "Passwords don't match",
+					fields: ["newPassword", "confirmNewPassword"],
+				});
+			}
+
+			await prisma.user.update({
+				where: {
+					id: req.session.userId,
+				},
+				data: {
+					password: req.body.newPassword,
+				},
+			});
+
+			return res.json({
+				success: true,
+				msg: `password changed`,
+			});
+		}
+	} catch (error) {
+		res
+			.status(400)
+			.json({ success: false, msg: `there was some error: ${error}` });
+	}
+};
+
+export const userProfilePicture = async (req: Request, res: Response) => {
+	try {
+		const user = await prisma.user.findUnique({
+			where: {
+				id: req.session.userId,
+			},
+		});
+
+		if (!user) {
+			return res.json({
+				success: false,
+				msg: `User not authenticated`,
+			});
+		}
+
+		if (!req.file?.destination) {
+			return res.json({
+				success: false,
+				msg: `Enter a valid image file`,
+				fields: ["image"],
+			});
+		}
+
+		await prisma.user.update({
+			where: {
+				id: req.session.userId,
+			},
+			data: {
+				profileImage:
+					"http://localhost:8080/" +
+					req.file.destination.replace("./public", "") +
+					"/" +
+					req.file.filename,
+			},
+		});
+		return res.json({ success: true, msg: "Profile picture updated" });
+	} catch (error) {
+		res
+			.status(400)
+			.json({ success: false, msg: `there was some error: ${error}` });
 	}
 };

@@ -7,7 +7,7 @@ import session from "express-session";
 import Redis from "ioredis";
 import postRouter from "./routes/BlogPost";
 import { getUser } from "./controllers/UserController";
-// import connectRedis from "connect-redis";
+// import { sendEmail } from "./utils/sendEmail";
 
 declare module "express-session" {
 	export interface SessionData {
@@ -17,14 +17,14 @@ declare module "express-session" {
 
 const RedisStore = require("connect-redis")(session);
 const app = express();
-let redisClient = new Redis();
+export const redis = new Redis();
 export const prisma = new PrismaClient();
 
 app.use(
 	session({
 		name: "qid",
 		store: new RedisStore({
-			client: redisClient,
+			client: redis,
 			disableTouch: true,
 		}),
 		cookie: {
@@ -47,9 +47,11 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static("public"));
 app.use(express.json());
 
 async function main() {
+	// sendEmail("bob@bob.com", "<h1>hello bob</h1>");
 	app.get("/", async (req, res) => {
 		if (!req.session.userId) {
 			res.json({ msg: "not logged in" });
@@ -69,8 +71,10 @@ async function main() {
 	app.use("/auth", authRouter);
 	app.use("/api", postRouter);
 
-	app.listen(process.env.PORT || 4000, () =>
-		console.log(`listening on http://localhost:${process.env.PORT || 4000}`)
+	app.listen(process.env.PORT, () =>
+		console.log(
+			`listening on http://localhost:${process.env.PORT}, ${process.env.CLIENT_URL}`
+		)
 	);
 }
 

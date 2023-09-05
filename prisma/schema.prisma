@@ -26,13 +26,14 @@ model Post {
 }
 
 model User {
-  id       String    @id @default(uuid())
-  email    String    @unique
-  name     String
-  password String
-  posts    Post[]
-  votes    Votes[]
-  comment  Comment[]
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  password     String
+  profileImage String?
+  posts        Post[]
+  votes        Votes[]
+  comment      Comment[]
 }
 
 model Votes {
@@ -52,6 +53,7 @@ model Comment {
   postId      String
   commenterId String
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt()
   post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   commenter   User     @relation(fields: [commenterId], references: [id])
 }

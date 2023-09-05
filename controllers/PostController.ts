@@ -150,7 +150,7 @@ export const getPostById = async (req: Request, res: Response) => {
 			},
 		});
 
-		res.json(post);
+		return res.json(post);
 	} catch (error) {
 		res.status(400).json({ msg: "Request cannot be processed" });
 	}
@@ -267,6 +267,7 @@ export const getComments = async (req: Request, res: Response) => {
 				commenter: {
 					select: {
 						name: true,
+						profileImage: true,
 					},
 				},
 			},
