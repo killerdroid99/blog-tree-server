@@ -17,7 +17,7 @@ declare module "express-session" {
 
 const RedisStore = require("connect-redis")(session);
 const app = express();
-export const redis = new Redis();
+export const redis = new Redis(process.env.REDIS_DB!);
 export const prisma = new PrismaClient();
 
 app.use(
