@@ -31,8 +31,9 @@ app.use(
 			maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // setting max age for cookie = 10 years
 			httpOnly: true,
 			sameSite: "lax",
-			secure: false,
+			secure: process.env.PROD === "true" ? true : false,
 			path: "/",
+			domain: process.env.PROD === "true" ? "something" : undefined,
 		},
 		saveUninitialized: false,
 		secret: process.env.SECRET as string,
@@ -45,6 +46,7 @@ const corsOptions = {
 	credentials: true,
 };
 
+app.set("trust proxy", 1);
 app.use(cors(corsOptions));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static("public"));
