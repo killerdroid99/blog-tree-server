@@ -33,7 +33,7 @@ app.use(
 			sameSite: "lax",
 			secure: process.env.PROD === "true" ? true : false,
 			path: "/",
-			domain: process.env.PROD === "true" ? "something" : undefined,
+			domain: process.env.PROD === "true" ? ".vercel.app" : undefined,
 		},
 		saveUninitialized: false,
 		secret: process.env.SECRET as string,
