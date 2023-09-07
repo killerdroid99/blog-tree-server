@@ -33,7 +33,7 @@ app.use(
 			sameSite: "strict",
 			secure: process.env.PROD === "true" ? true : false,
 			path: "/",
-			domain: process.env.PROD === "true" ? process.env.CLIENT_URL : undefined,
+			// domain: process.env.PROD === "true" ? process.env.CLIENT_URL : undefined,
 		},
 		saveUninitialized: false,
 		secret: process.env.SECRET as string,
