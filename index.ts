@@ -30,10 +30,10 @@ app.use(
 		cookie: {
 			maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // setting max age for cookie = 10 years
 			httpOnly: true,
-			sameSite: "lax",
+			sameSite: "none",
 			secure: process.env.PROD === "true" ? true : false,
 			path: "/",
-			domain: process.env.PROD === "true" ? ".onrender.com" : undefined,
+			domain: process.env.PROD === "true" ? process.env.CLIENT_URL : undefined,
 		},
 		saveUninitialized: false,
 		secret: process.env.SECRET as string,
